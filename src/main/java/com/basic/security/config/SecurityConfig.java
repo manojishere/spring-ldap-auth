@@ -2,49 +2,49 @@ package com.basic.security.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	private Logger logger = LoggerFactory.getLogger( SecurityConfig.class );
 
-	@Autowired
-	private UserDetailsService userDetailsService;
+	  @Override
+	  protected void configure(HttpSecurity http) throws Exception {
 
-	@Override
-	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		logger.debug("inside configure(AuthenticationManagerBuilder auth)");
-		try {
-			auth.userDetailsService( userDetailsService );
-		}catch( Exception e ) {
-			logger.error( "configure : " + e);
-			throw e;
-		}
-	}
+	    http
+	      .authorizeRequests()
+	        .antMatchers("/welcome").permitAll() // no auth requiered
+	        .anyRequest().fullyAuthenticated() // auth required for every request.
+	        .and()
+	      .formLogin();
+	  }
 
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
-		http.authorizeRequests()
-			.antMatchers("/admin").hasRole("ADMIN")
-			.antMatchers("/user").hasAnyRole("ADMIN", "USER")
-			.antMatchers("/").permitAll()
-			.and()
-			.formLogin();
-	}
+
 	
 	@Bean
-	public PasswordEncoder getPasswordEncoder() {
-		return NoOpPasswordEncoder.getInstance();
-	}
+	public AuthenticationProvider activeDirectoryLdapAuthenticationProvider() {
+		logger.info("SecurityConfig AuthenticationProvider activeDirectoryLdapAuthenticationProvider()");
+		ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider("uss.net",
+				"ldaps://ldap-qts.uss.net");
+
+		/*
+		 * The LDAP filter string to search for the user being authenticated.
+		 * Occurrences of {0} are replaced with the username@domain. Occurrences of {1}
+		 * are replaced with the username only.
+		 */
+		provider.setSearchFilter("sAMAccountName={1}");
+		provider.setConvertSubErrorCodesToExceptions(true);
+		provider.setUseAuthenticationRequestCredentials(true);
+		//provider.setUserDetailsContextMapper( myUserDetailsContextMapper );;
+
+		return provider;
+	}	
 	
 }
