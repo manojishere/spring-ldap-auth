@@ -61,7 +61,6 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<!--
 			<plugin>
 				<groupId>com.google.cloud.tools</groupId>
 				<artifactId>jib-maven-plugin</artifactId>
@@ -71,7 +70,7 @@
                         <image>manojishere/swipe-reload-auth:1.0</image> 
                     </to>
                     <from>                          
-				        <image>openjdk:11</image>	
+				        <image>docker.maven.incomm.com/openjdk:11</image>		
 				    </from>
                     <container>
         				<ports>
@@ -87,8 +86,7 @@
 						</goals>
 					</execution>
 				</executions>				
-			</plugin>
-			-->			
+			</plugin>			
 		</plugins>
 		<finalName>swipe-reload-auth</finalName>
 	</build>
