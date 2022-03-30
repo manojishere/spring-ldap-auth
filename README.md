@@ -1,5 +1,6 @@
 # spring-basic-db-auth
 
+# Before running the docker-compose build command, make sure that InCommRoot.cer file is copied inside the project folder.
 
 docker-compose.yaml
 --------------------
@@ -14,14 +15,28 @@ services:
         - "8080:8080"
     volumes:
         - ./swipe-reload-logs:/logs 
+
 		
 Docker file:
-------------
+------------------------------------------------------------------------------------------------------------------------
 FROM openjdk:11
+WORKDIR /opt/workdir/
+
+ARG CERT="InCommRoot.cer"
+
+#import cert into java
+COPY $CERT /opt/workdir/
+#RUN keytool -importcert -file $CERT -alias $CERT -cacerts -storepass changeit -noprompt
+
+WORKDIR ../../
+
 ARG JAR_FILE=target/swipe-reload-auth.jar
 COPY ${JAR_FILE} app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app.jar"]	
+
+
+------------------------------------------------------------------------------------------------------------------------
 
 # Logs can be verified at \swipe-reload-logs\MyAppl.log	
 
@@ -47,19 +62,20 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 
 >docker compose build
 [+] Building 3.7s (8/8) FINISHED
- => [internal] load build definition from Dockerfile                                                                                                                                                          0.1s
- => => transferring dockerfile: 175B                                                                                                                                                                          0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                                          0.0s
+ => => transferring dockerfile: 395B                                                                                                                                                                          0.0s
  => [internal] load .dockerignore                                                                                                                                                                             0.0s
  => => transferring context: 2B                                                                                                                                                                               0.0s
- => [internal] load metadata for docker.io/library/openjdk:11                                                                                                                                                 1.6s
- => [auth] library/openjdk:pull token for registry-1.docker.io                                                                                                                                                0.0s
- => [internal] load build context                                                                                                                                                                             0.6s
- => => transferring context: 24.74MB                                                                                                                                                                          0.5s
- => CACHED [1/2] FROM docker.io/library/openjdk:11@sha256:0a1f4417ad7666846cb381bff95917bc5b55d6cc36a64be5436bcd4fee12f628                                                                                    0.0s
- => [2/2] COPY target/swipe-reload-auth.jar app.jar                                                                                                                                                           0.8s
- => exporting to image                                                                                                                                                                                        0.5s
- => => exporting layers                                                                                                                                                                                       0.4s
- => => writing image sha256:6c9713bba99c9c6fd877c45180e1283db3659f61b5efaeed570b5ab94857cac7                                                                                                                  0.0s
+ => [internal] load metadata for docker.io/library/openjdk:11                                                                                                                                                 0.7s
+ => [internal] load build context                                                                                                                                                                             0.0s
+ => => transferring context: 1.42kB                                                                                                                                                                           0.0s
+ => [1/5] FROM docker.io/library/openjdk:11@sha256:0a1f4417ad7666846cb381bff95917bc5b55d6cc36a64be5436bcd4fee12f628                                                                                           0.0s
+ => CACHED [2/5] WORKDIR /opt/workdir/                                                                                                                                                                        0.0s
+ => CACHED [3/5] COPY InComm_Root_Cert.cer /opt/workdir/                                                                                                                                                      0.0s
+ => [4/5] COPY target/swipe-reload-auth.jar app.jar                                                                                                                                                           0.2s
+ => exporting to image                                                                                                                                                                                        0.2s
+ => => exporting layers                                                                                                                                                                                       0.2s
+ => => writing image sha256:099c662f9748dc3bf0d4257c8b40cf9f25e053f7bd2fc5adb3190b209cabff5a                                                                                                                  0.0s
  => => naming to docker.io/manojishere/swipe-reload-auth:1.0
  
 
@@ -107,14 +123,9 @@ http://localhost:8080/welcome
 welcome home
 
 http://localhost:8080/login
--> will return login page, and u will have to enter username and password. currently it will fail, as we have not provided the ldap cert in the java trust store.
+-> will return login page, and u will have to enter username and password. currently it will be successfull, as we have provided the ldap cert in the java trust store.
 
-service_1  | Caused by: org.springframework.ldap.CommunicationException: simple bind failed: ldap-qts.uss.net:636; nested exception is javax.naming.CommunicationException: simple bind failed: ldap-qts.uss.net:636 [Root exception is java.net.SocketException: Connection or outbound has closed]
-service_1  |    at org.springframework.ldap.support.LdapUtils.convertLdapException(LdapUtils.java:108) ~[spring-ldap-core-2.3.5.RELEASE.jar!/:2.3.5.RELEASE]
-service_1  |    at org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider.bindAsUser(ActiveDirectoryLdapAuthenticationProvider.java:224) ~[spring-security-ldap-5.6.1.jar!/:5.6.1]
-service_1  |    at org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider.doAuthentication(ActiveDirectoryLdapAuthenticationProvider.java:167) ~[spring-security-ldap-5.6.1.jar!/:5.6.1]
-service_1  |    ... 57 common frames omitted
-service_1  | Caused by: javax.naming.CommunicationException: simple bind failed: ldap-qts.uss.net:636
+U r successfully logged in.
 
 # Logs can be verified at \swipe-reload-logs\MyAppl.log
 
