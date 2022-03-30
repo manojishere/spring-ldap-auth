@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-deployment
+  labels:
+    app: spring-hello
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-hello
+  template:
+    metadata:
+      labels:
+        app: spring-hello
+    spec:
+      volumes:
+      - name: cacerts
+        emptyDir: {}
+      - name: tls
+        secret:
+          secretName: tls-secret
+          defaultMode: 0400
+      initContainers:
+      - name: init-cacerts
+        image: openjdk:11
+        command:
+        - bash
+        - -c
+        - |
+           cp -R /usr/local/openjdk-11/lib/security/* /cacerts/
+           keytool -import -noprompt -trustcacerts -alias local -file /security/InCommRoot.cer -keystore /cacerts/cacerts -storepass changeit
+           keytool -list -keystore /cacerts/cacerts -alias local
+        volumeMounts:
+        - mountPath: /cacerts
+          name: cacerts
+        - mountPath: /security
+          name: tls        
+      containers:
+      - name: spring-kube
+        image: manojishere/swipe-reload-auth:1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: cacerts
+          mountPath: /usr/local/openjdk-11/lib/security
+
+
+
+
+
+
+
